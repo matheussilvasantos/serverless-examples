@@ -1,0 +1,42 @@
+service: <your-service-name-here>
+
+provider:
+  name: aws
+  runtime: ruby2.5
+  region: us-east-1
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "sqs:SendMessage"
+        - "sqs:GetQueueUrl"
+      Resource: arn:aws:sqs:*:*:${self:custom.queue_name}
+
+custom:
+  queue_name: <your-queue-name-here>
+
+package:
+  exclude:
+    - .git
+    - .gitignore
+
+functions:
+  handle_request:
+    handler: handler.process
+
+    events:
+      - http:
+          path: <your-path-here>
+          cors: true
+          integration: lambda
+          method: post
+
+    environment:
+      QUEUE_NAME: ${self:custom.queue_name}
+
+resources:
+  Resources:
+    OrdersQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:custom.queue_name}
